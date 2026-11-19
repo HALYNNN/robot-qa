@@ -1,0 +1,158 @@
+﻿TC ID,모듈,유형,우선순위,테스트 항목,사전 조건,실행 스텝,기대 결과,실제 결과,판정
+NAV-001,주행 제어 (NavigateToPose),정상,P1,단일 Goal 주행 도착 정확도 (1.5 m 전방 지점),"· Gazebo `turtlebot3_world` 기동, 모델 TurtleBot3 Waffle Pi
+· `nav2_bringup` 기동 완료, `/map` 발행 정상
+· AMCL initial pose (0, 0) 설정 후 수렴 완료
+· TF map→odom→base_footprint 정상, `/odom` 20 Hz 이상","1) `ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py`
+2) `ros2 launch nav2_bringup navigation2.launch.py map:=$HOME/map/map.yaml`
+3) RViz `2D Pose Estimate`로 (0, 0) 지정 → `ros2 topic echo /amcl_pose`로 수렴 확인
+4) `ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose ""{pose: {header: {frame_id: map}, pose: {position: {x: 1.5, y: 0.5, z: 0.0}, orientation: {w: 1.0}}}}"" --feedback`
+5) 도착 후 `/amcl_pose`에서 최종 위치 5회 샘플링, 도착 오차 계산","· action 최종 상태 `SUCCEEDED`
+· 도착 위치 오차 ≤ `goal_xy_tolerance` 0.25 m, yaw 오차 ≤ 0.25 rad
+· 1.5 m 구간 총 소요 시간 ≤ 60 s
+· 주행 중 장애물 접촉 0회, 경로 이탈 ≤ 0.15 m","(샘플 실행 기록) `SUCCEEDED`. 최종 pose (1.52, 0.46) → 오차 X +0.02 m / Y −0.04 m = 0.045 m, yaw 0.03 rad, 소요 38 s, 접촉 0회",PASS
+NAV-002,경로계획 (Waypoint Follower),정상,P1,다중 경유지(Waypoint) 순차 주행,"· NAV-001 환경
+· `nav2_waypoint_follower`(FollowWaypoints) active
+· 경유지 파일 `route_3pt.geojson` (A(1.0, 0.0) → B(2.0, 1.0) → C(−1.0, 2.0))","1) `ros2 action send_goal /follow_waypoints nav2_msgs/action/FollowWaypoints ""{poses: [경유지 A, B, C]}"" --feedback`
+2) `/plan`과 RViz 경로로 진행 순서 확인
+3) 각 경유지 도착 시각을 로그 타임스탬프로 수집
+4) 완료 후 결과의 `missed_waypoints` 확인
+5) 마지막 경유지에서 정지 상태( |v| < 0.01 m/s ) 확인","· 3개 경유지 모두 지정 순서대로 도착, 순서 역전 0회
+· `missed_waypoints` 빈 배열
+· 각 경유지 도착 오차 ≤ 0.25 m
+· 전체 action `SUCCEEDED`, 경유지 간 평균 소요 ≤ 40 s",,미실행
+NAV-003,경로계획·주행 (재탐색),정상,P1,장애물 우회 재탐색 (경로 상 장애물 삽입),"· 폭 1 m 이상 통로가 있는 static map
+· `global_costmap` static+obstacle layer, `behavior_server` active
+· 장애물 모델 `box.sdf` (0.3 × 0.3 × 0.4 m) 준비","1) (0, 0) → (3.0, 0.0) goal 전송
+2) 로봇이 약 1.2 m 진행한 시점에 경로 위로 장애물 삽입: `ros2 run gazebo_ros spawn_entity.py -entity obs1 -file box.sdf -x 1.8 -y 0.0 -z 0.1`
+3) `ros2 topic echo /plan --once`로 새 global plan 확인
+4) `/local_costmap/costmap`과 `/cmd_vel` 변화 관찰 (10 s)
+5) 도착까지 결과·재계획 횟수 기록","· 장애물 인지 후 3 s 내 우회 경로 재생성 (경로가 장애물 회피)
+· 접촉 0회, 정지 유지 ≤ 5 s 후 재출발
+· 최종 `SUCCEEDED`, 재계획 ≥ 1회",,미실행
+NAV-004,경로계획·주행 (Planner/Controller),경계,P1,좁은 통로(로봇 폭 + 여유폭 최소) 통과 — 폭 0.40 m,"· `turtlebot3_world` 수정 world: x 1.0~2.0 구간에 벽 2개로 폭 0.40 m 통로 구성 (벽 높이 0.5 m)
+· slam_toolbox로 재작성한 `map_040.yaml` 사용
+· `robot_radius: 0.22`, `inflation_radius: 0.55`, `cost_scaling_factor: 3.0` (nav2 기본값)
+· 로봇 폭 0.281 m → 통로 여유 0.119 m
+· AMCL (0, 0) 수렴 완료","1) 수정 world로 Gazebo 기동: `ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py`
+2) `ros2 launch nav2_bringup navigation2.launch.py map:=map_040.yaml`
+3) 통로 반대편 (2.5, 0.0)을 goal로 전송
+4) `ros2 topic echo /plan`, planner_server 로그, RViz costmap 표시 확인
+5) 3회 반복 후 `inflation_radius`를 0.25로 낮춰 4회차 비교 시험","· 통로 중심선을 따르는 유효 경로가 생성됨
+· 통로 진입~통과 구간 벽 접촉 0회
+· goal tolerance 0.25 m 내 도착, `SUCCEEDED`
+· (비교) inflation 조정 시에도 위 기준 충족","(샘플 실행 기록) 3회 모두 `ABORTED`.
+planner_server 로그: ""Failed to create plan with tolerance 0.50."" / ""Planning algorithm GridBased failed to generate a valid path to (2.50, 0.00)""
+RViz costmap에서 통로 폭 전체가 inflated 영역으로 덮여 자유 공간 0으로 표시.
+통로 진입 0.6 m 앞에서 정지 후 제자리 회전 3회 반복, 최종 위치 (0.38, −0.02) → 목표 대비 오차 2.12 m.
+inflation 0.25로 낮춘 4회차는 `SUCCEEDED` (통과 12 s) → 파라미터 의존성 확인",FAIL
+NAV-005,위치추정 (AMCL),정상,P1,초기 위치(AMCL) 수렴 후 주행,"· 로봇을 map 상 알려진 (0, 0)에 배치 (yaw 0)
+· `amcl` 기본 파라미터, 초기 분포 지정 없음
+· RViz particle cloud 표시 활성","1) `ros2 lifecycle get /amcl` = active 확인
+2) RViz `2D Pose Estimate`로 (0, 0, yaw 0) 1회 지정
+3) `ros2 topic echo /amcl_pose`에서 covariance (0,0)·(1,1) ≤ 0.05가 될 때까지 대기, 소요 시간 측정
+4) 수렴 확인 즉시 (2.0, 0.0) goal 전송
+5) 주행 중 `/amcl_pose`를 1 s 간격으로 샘플링해 pose jump 검사","· 수렴 완료 후 주행 시작, 수렴까지 ≤ 30 s
+· 도착 오차 ≤ 0.25 m, `SUCCEEDED`
+· pose jump(1 s 간 0.5 m 초과 이동) 0회
+· 수렴 전 주행 명령(`/cmd_vel`) 출력 0회",,미실행
+NAV-006,주행 제어 (동역학 한계),경계,P2,최대 선속도/각속도 구간 코너링,"· `max_vel_x: 0.26`, `max_vel_theta: 1.82` (Waffle 기본)
+· 90° 코너 2개가 포함된 경로 (예: (0, 0) → (2.0, 0.0) → (2.0, 2.0))
+· `ros2 bag record` 준비","1) 두 코너를 포함한 goal 전송
+2) `ros2 bag record -o corner_test /cmd_vel /odom` (주행 전 구간)
+3) `ros2 topic echo /cmd_vel`로 코너 구간 값 수집
+4) 최대 `linear.x`·`|angular.z|`와 odom 궤적의 경로 이탈 계산
+5) bag 재생으로 재현성 확인","· 실측 `linear.x` ≤ 0.26 + 5% (0.273)
+· 실측 `|angular.z|` ≤ 1.82 + 5% (1.911)
+· 코너 진입 전 감속 동작 확인
+· 경로 이탈 ≤ 0.15 m, 명령 진동(0.2 s 내 부호 반전) 0회, `SUCCEEDED`",,미실행
+NAV-007,Goal 처리 (tolerance),경계,P2,Goal 허용 오차 반경 경계값 검증 (0.24 / 0.25 / 0.26 m),"· `goal_xy_tolerance: 0.25`, `goal_yaw_tolerance: 0.25`
+· 로봇 정지 상태, map 상 장애물 없는 구역","1) 현재 pose 기준 0.24 m 앞 지점을 goal로 전송 → 결과 기록
+2) 0.25 m 지점으로 동일 시험
+3) 0.26 m 지점으로 동일 시험
+4) 각 조건 3회 반복, `/amcl_pose`로 실제 도달 거리 측정
+5) 판정 결과와 파라미터 tolerance 값 대조","· 0.24 m·0.25 m: `SUCCEEDED`
+· 0.26 m: 도달 후 `SUCCEEDED`, 미도달이면 실패 상태와 오차가 함께 보고됨
+· 경계값에서 크래시·무한 재시도 0회
+· tolerance 파라미터와 판정 결과가 일치",,미실행
+NAV-008,Goal 처리 (취소),예외,P1,주행 중 Goal 취소(Cancel),"· NAV-001 환경
+· 장거리 goal (5.0, 0.0)
+· 취소 수단 2종 준비: RViz Navigation2 패널 Cancel, rclpy ActionClient `cancel_goal_async()`","1) (5.0, 0.0) goal 전송
+2) 약 1.5 m 진행 시점에 cancel 요청 (RViz → 스크립트 순서로 각 1회)
+3) `ros2 topic echo /cmd_vel`로 정지까지 걸린 시간 측정
+4) action 결과 상태(`CANCELED`/`SUCCEEDED`) 확인
+5) 취소 후 새 goal (0, 0) 전송해 수락·주행 재개 확인","· 취소 후 2 s 내 `linear.x`·`angular.z` = 0
+· action 상태 `CANCELED` (SUCCEEDED 오판 0)
+· 취소 시점 대비 추가 이동 ≤ 0.2 m
+· 5 s 내 새 goal 수락 및 주행 재개
+· 취소 후 프로세스 크래시·TF 오류 0",,미실행
+NAV-009,Goal 처리 (덮어쓰기),예외,P1,주행 중 새 Goal 덮어쓰기,"· NAV-001 환경
+· goal A (5.0, 0.0), goal B (0.0, 2.0)","1) goal A 전송
+2) 1.5 m 진행 시점에 goal B 전송
+3) `/plan` 새 경로와 `/cmd_vel` 방향 전환까지 걸린 시간 측정
+4) goal A·B의 최종 상태 확인
+5) 최종 도착 위치 오차 측정","· B 전송 후 2 s 내 새 경로 생성
+· A는 `CANCELED`(preempted) 처리, 동시 주행·상태 꼬임 0
+· 로봇이 B 방향으로 전환, 제자리 회전 반복·정지 고착 0회
+· B 도착 오차 ≤ 0.25 m, `SUCCEEDED`",,미실행
+NAV-010,경로계획 (실패 처리),예외,P1,목표 지점 위 장애물 점유,"· map 상 벽 내부 좌표 (1.2, 0.8) 확인
+· `global_costmap`에서 해당 셀이 lethal인지 RViz로 확인
+· 비교용 근접 좌표 (1.5, 0.5) 준비","1) 벽 내부 좌표 (1.2, 0.8)를 goal로 전송
+2) `ComputePathToPose` 결과와 planner_server 로그 확인
+3) 30 s간 로봇 이동·재시도 횟수 관찰
+4) 동일 시험 3회 반복
+5) 근접 좌표 (1.5, 0.5) goal로 비교 시험","· 경로 생성 실패를 명확히 반환 (`ABORTED` + 사유 로그)
+· goal 방향 돌진·접촉 0회
+· 30 s 내 종료 (무한 재시도 0), 프로세스 크래시 0
+· 근접 좌표 goal은 정상 `SUCCEEDED`",,미실행
+NAV-011,동적 장애물 대응,예외,P1,동적 장애물 돌발 출현,"· 로봇 전방에 3 m 직선 경로 확보
+· 횡단 모델 `person.sdf`/`cylinder.sdf` 준비
+· local_costmap 갱신 주기 기본값","1) (3.0, 0.0) goal 전송
+2) 로봇 1.0 m 진행 시 전방 0.8 m 지점에 1.0 m/s로 횡단하도록 spawn
+3) `/local_costmap/costmap`에 lethal 셀 반영 확인
+4) `/cmd_vel` 감속 시점과 접촉 여부 확인
+5) 도착까지 결과·재계획 횟수 기록","· 장애물 인지 후 0.5 s 내 감속
+· 접촉 0회, 통과 후 3 s 내 재출발
+· 재계획 ≥ 1회, 최종 `SUCCEEDED`
+· costmap 반영 지연 ≤ 1 s",,미실행
+NAV-012,센서 (LiDAR),예외,P1,`/scan`(LiDAR) 토픽 강제 중단,"· costmap obstacle layer가 `/scan`(relay 사용 시 `/scan_relay`) 구독
+· `observation_timeout`·`transform_tolerance` 값 기록
+· `topic_tools` 설치","1) `ros2 run topic_tools relay /scan /scan_relay` 실행, costmap 입력을 `/scan_relay`로 remap
+2) 주행 시작, `ros2 topic hz /scan_relay` = 5 Hz 확인
+3) 1.5 m 진행 시점에 relay 프로세스 종료(Ctrl+C)로 토픽 중단
+4) `/cmd_vel`과 controller_server 로그를 10 s 관찰
+5) relay 재기동 후 복구 시간 측정","· 센서 데이터 만료(`observation_timeout`) 후 만료 처리
+· 2 s 내 정지 ( |v| < 0.01 m/s )
+· 블라인드 주행 ≤ 0.1 m, 경고/에러 로그 1회 이상, 크래시 0
+· 복구 후 3 s 내 주행 재개, `SUCCEEDED`",,미실행
+NAV-013,위치추정 (odom),예외,P2,`/odom` 지연·패킷 드롭,"· odom 인위 지연·드롭 노드(rclpy, 200 ms 지연 / 30% drop) 준비
+· controller `odom_topic` remap 설정
+· 정상 주행 1회 기준값 확보","1) 정상 조건으로 goal 도달 확인 (기준값)
+2) odom에 200 ms 지연 적용 후 goal 전송
+3) 주행 10 s 구간에 30% 드롭 적용
+4) `/cmd_vel`, controller_server 로그, TF extrapolation 오류 횟수 측정
+5) 지연·드롭 해제 후 주행 지속·도착 여부 확인","· odom 타임아웃 감지 시 속도 하향 또는 정지로 안전 유지
+· TF extrapolation 류 에러 반복 ≤ 10회
+· 경로 이탈 ≤ 0.3 m
+· goal 최종 상태 일관(성공/실패 명확), 크래시 0
+· 해제 후 5 s 내 주행 재개",,미실행
+NAV-014,초기화·맵,예외,P1,맵 미로드 상태 Goal 전송,"· `map_server` 미기동 또는 `yaml_filename` 오류로 `/map` 미발행
+· `ros2 topic info /map` publisher 0 확인
+· 정상 `map.yaml` 준비 (재시도용)","1) `/map` 미발행 상태 확인
+2) RViz `2D Goal Pose` 전송 및 `ros2 action send_goal /navigate_to_pose` 시도
+3) action 상태·노드 로그 확인
+4) `/cmd_vel` 출력 여부 확인 (로봇 무이동 확인)
+5) 60 s 후 정상 map으로 재기동해 동일 goal 재시도","· goal 거부 또는 즉시 `ABORTED` + 맵 없음 사유 로그
+· `/cmd_vel` 무출력(로봇 무이동)
+· nav2 노드 크래시 0
+· 정상화 후 동일 goal `SUCCEEDED`",,미실행
+NAV-015,로깅·성능 (rosbag2),예외,P2,`rosbag2` 녹화 및 `/cmd_vel`·`/scan` Hz 드롭 여부 검증,"· 디스크 여유 20 GB 이상
+· 기준 Hz: `/scan` 5 Hz(LDS-01, 플러그인 설정값 재확인), `/cmd_vel` ≥ 10 Hz
+· 녹화 대상: /cmd_vel /scan /odom /amcl_pose /plan /tf /tf_static /local_costmap/costmap","1) `ros2 bag record -o nav_issue01 /cmd_vel /scan /odom /amcl_pose /plan /tf /tf_static /local_costmap/costmap`
+2) 같은 시점 별도 터미널에서 `ros2 topic hz /cmd_vel`·`ros2 topic hz /scan` 측정
+3) 120 s 주행 후 `ros2 bag info`로 토픽 목록·메시지 수 확인
+4) 드롭률 = (기대 메시지 수 − 실제 메시지 수) / 기대 메시지 수 × 100
+5) `ros2 bag play nav_issue01`로 재생해 이슈 재현 여부 확인","· `ros2 bag info`에 요청 토픽 전부 존재
+· 녹화 중 메시지 드롭 ≤ 1%
+· `/scan` 5 Hz ± 10%, `/cmd_vel` ≥ 10 Hz
+· bag 재생만으로 동일 현상 재현 가능
+· 녹화 중 CPU 사용률 ≤ 80%",,미실행

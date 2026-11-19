@@ -1,0 +1,68 @@
+{
+  "dataset": "sample_labels",
+  "allowed_classes": ["car", "pedestrian", "traffic_light", "bicycle"],
+  "images": [
+    {
+      "id": "img_0001",
+      "path": "images/img_0001.jpg",
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {"class": "car", "bbox": [120, 240, 300, 180]},
+        {"class": "pedestrian", "bbox": [700, 300, 80, 220]}
+      ]
+    },
+    {
+      "id": "img_0002",
+      "path": "images/img_0002.jpg",
+      "width": 1280,
+      "height": 720,
+      "annotations": []
+    },
+    {
+      "id": "img_0003",
+      "path": "images/img_0003.jpg",
+      "width": 1920,
+      "height": 1080,
+      "annotations": [
+        {"class": "car", "bbox": [100, -20, 240, 160]}
+      ]
+    },
+    {
+      "id": "img_0004",
+      "path": "images/img_0004.jpg",
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {"class": "bicycle", "bbox": [1100, 400, 320, 200]}
+      ]
+    },
+    {
+      "id": "img_0005",
+      "path": "images/img_0005.jpg",
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {"class": "truck", "bbox": [300, 300, 200, 150]}
+      ]
+    },
+    {
+      "id": "img_0006",
+      "path": null,
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {"class": "traffic_light", "bbox": [640, 120, 40, 90]}
+      ]
+    },
+    {
+      "id": "img_0007",
+      "path": "images/img_0007.jpg",
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {"class": "pedestrian", "bbox": "640,120,40,90"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{"timestamp": 0.0, "event": "run_start", "node": "bt_navigator", "map": "map_040.yaml", "note": "Nav2 주행 로그 샘플 (검증기 동작 확인용)"}
+{"timestamp": 0.4, "event": "topic", "topic": "/scan", "expected_hz": 5.0, "actual_hz": 5.0, "delay_ms": 38, "dropped": 0}
+{"timestamp": 0.9, "event": "goal", "goal_id": "NAV-001-01", "status": "ACCEPTED", "target": [1.5, 0.5]}
+{"timestamp": 38.4, "event": "goal", "goal_id": "NAV-001-01", "status": "SUCCEEDED", "elapsed_s": 37.5, "final_pose": [1.52, 0.46]}
+{"timestamp": 39.0, "event": "topic", "topic": "/cmd_vel", "expected_hz": 10.0, "actual_hz": 11.4, "delay_ms": 12, "dropped": 0}
+{"timestamp": 40.2, "event": "goal", "goal_id": "NAV-004-01", "status": "ACCEPTED", "target": [2.5, 0.0]}
+{"timestamp": 44.6, "event": "topic", "topic": "/scan", "expected_hz": 5.0, "actual_hz": 3.4, "delay_ms": 470, "dropped": 6}
+{"timestamp": 47.1, "event": "emergency_stop", "source": "collision_monitor", "reason": "통로 진입 전 정지 요구", "active": true}
+{"timestamp": 47.05, "event": "log", "level": "WARN", "node": "controller_server", "message": "robot stopped by collision monitor"}
+{"timestamp": 48.3, "event": "goal", "goal_id": "NAV-004-01", "status": "ABORTED", "reason": "Failed to create plan with tolerance 0.50"}
+{"timestamp": 49.0, "event": "node", "node": "planner_server", "state": "ACTIVE"}
+{"timestamp": 60.0, "event": "run_end", "node": "bt_navigator", "note": "시험 종료"}
