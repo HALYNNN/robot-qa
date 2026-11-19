@@ -53,21 +53,21 @@ robot-qa/
 
 | TC ID | 모듈 | 유형 | 우선순위 | 판정 |
 |:---|:---|:---|:---:|:---:|
-| [NAV-001](test-cases/nav2-qa-testcases.md#nav001) | 주행 제어 (NavigateToPose) | 정상 | P1 | PASS |
-| [NAV-002](test-cases/nav2-qa-testcases.md#nav002) | 경로계획 (Waypoint Follower) | 정상 | P1 | 미실행 |
-| [NAV-003](test-cases/nav2-qa-testcases.md#nav003) | 경로계획·주행 (재탐색) | 정상 | P1 | 미실행 |
-| [NAV-004](test-cases/nav2-qa-testcases.md#nav004) | 경로계획·주행 (Planner/Controller) | 경계 | P1 | **FAIL** |
-| [NAV-005](test-cases/nav2-qa-testcases.md#nav005) | 위치추정 (AMCL) | 정상 | P1 | 미실행 |
-| [NAV-006](test-cases/nav2-qa-testcases.md#nav006) | 주행 제어 (동역학 한계) | 경계 | P2 | 미실행 |
-| [NAV-007](test-cases/nav2-qa-testcases.md#nav007) | Goal 처리 (tolerance) | 경계 | P2 | 미실행 |
-| [NAV-008](test-cases/nav2-qa-testcases.md#nav008) | Goal 처리 (취소) | 예외 | P1 | 미실행 |
-| [NAV-009](test-cases/nav2-qa-testcases.md#nav009) | Goal 처리 (덮어쓰기) | 예외 | P1 | 미실행 |
-| [NAV-010](test-cases/nav2-qa-testcases.md#nav010) | 경로계획 (실패 처리) | 예외 | P1 | 미실행 |
-| [NAV-011](test-cases/nav2-qa-testcases.md#nav011) | 동적 장애물 대응 | 예외 | P1 | 미실행 |
-| [NAV-012](test-cases/nav2-qa-testcases.md#nav012) | 센서 (LiDAR) | 예외 | P1 | 미실행 |
-| [NAV-013](test-cases/nav2-qa-testcases.md#nav013) | 위치추정 (odom) | 예외 | P2 | 미실행 |
-| [NAV-014](test-cases/nav2-qa-testcases.md#nav014) | 초기화·맵 | 예외 | P1 | 미실행 |
-| [NAV-015](test-cases/nav2-qa-testcases.md#nav015) | 로깅·성능 (rosbag2) | 예외 | P2 | 미실행 |
+| [NAV-001](test-cases/nav2-qa-testcases.md#nav-001) | 주행 제어 (NavigateToPose) | 정상 | P1 | PASS |
+| [NAV-002](test-cases/nav2-qa-testcases.md#nav-002) | 경로계획 (Waypoint Follower) | 정상 | P1 | 미실행 |
+| [NAV-003](test-cases/nav2-qa-testcases.md#nav-003) | 경로계획·주행 (재탐색) | 정상 | P1 | 미실행 |
+| [NAV-004](test-cases/nav2-qa-testcases.md#nav-004) | 경로계획·주행 (Planner/Controller) | 경계 | P1 | **FAIL** |
+| [NAV-005](test-cases/nav2-qa-testcases.md#nav-005) | 위치추정 (AMCL) | 정상 | P1 | 미실행 |
+| [NAV-006](test-cases/nav2-qa-testcases.md#nav-006) | 주행 제어 (동역학 한계) | 경계 | P2 | 미실행 |
+| [NAV-007](test-cases/nav2-qa-testcases.md#nav-007) | Goal 처리 (tolerance) | 경계 | P2 | 미실행 |
+| [NAV-008](test-cases/nav2-qa-testcases.md#nav-008) | Goal 처리 (취소) | 예외 | P1 | 미실행 |
+| [NAV-009](test-cases/nav2-qa-testcases.md#nav-009) | Goal 처리 (덮어쓰기) | 예외 | P1 | 미실행 |
+| [NAV-010](test-cases/nav2-qa-testcases.md#nav-010) | 경로계획 (실패 처리) | 예외 | P1 | 미실행 |
+| [NAV-011](test-cases/nav2-qa-testcases.md#nav-011) | 동적 장애물 대응 | 예외 | P1 | 미실행 |
+| [NAV-012](test-cases/nav2-qa-testcases.md#nav-012) | 센서 (LiDAR) | 예외 | P1 | 미실행 |
+| [NAV-013](test-cases/nav2-qa-testcases.md#nav-013) | 위치추정 (odom) | 예외 | P2 | 미실행 |
+| [NAV-014](test-cases/nav2-qa-testcases.md#nav-014) | 초기화·맵 | 예외 | P1 | 미실행 |
+| [NAV-015](test-cases/nav2-qa-testcases.md#nav-015) | 로깅·성능 (rosbag2) | 예외 | P2 | 미실행 |
 
 **설계 기준**
 
@@ -233,7 +233,7 @@ python3 scripts/validate_label_dataset.py labels.json --images-root /data/images
 주행 시험에서 나온 결함을 "다른 사람이 그대로 재현할 수 있는 형태"로 남기기 위한 양식입니다.
 
 - 이슈 제목 규칙: `[모듈] 현상 + 재현 조건` (50자 이내)
-- 심각도 S1~S4(영향 기준)와 우선순위 P1~P3(일정·현장 영향 기준)를 분리
+- 심각도 S1–S4(영향 기준)와 우선순위 P1–P3(일정·현장 영향 기준)를 분리
 - 테스트 환경에 OS·ROS2·시뮬레이터·파라미터 파일 커밋 해시까지 기록
 - 재현 스텝은 명령어 단위 5단계 이내, 기대 결과에는 판정 기준값 포함
 - rosbag2 경로·콘솔 로그·스크린샷·파라미터 파일을 첨부해 **첨부만으로 재현 가능**하게
